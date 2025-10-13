@@ -2,7 +2,7 @@
 
 ## Progress Checklist
 - [x] **Commit 1**: Project Foundation & Module Setup
-- [ ] **Commit 2**: Foundation Packages (Errors & Config)
+- [x] **Commit 2**: Foundation Packages (Errors & Config)
 - [ ] **Commit 3**: Logging Package
 - [ ] **Commit 4**: Retry Package
 - [ ] **Commit 5**: Metrics Package
