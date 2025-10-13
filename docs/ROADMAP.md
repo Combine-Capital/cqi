@@ -89,23 +89,23 @@
 
 ---
 
-### Commit 4: Retry Package
+### Commit 4: Retry Package ✅
 
 **Goal**: Implement retry logic with exponential backoff independent of other infrastructure
 **Depends**: Commit 2 (errors for retry policies)
 
 **Deliverables**:
-- [ ] Create `pkg/retry/backoff.go` with exponential backoff calculation: delay = initial * multiplier^attempt with jitter (±25%)
-- [ ] Create `pkg/retry/policy.go` with retry policies: RetryTemporary (only Temporary errors), RetryAll, RetryNone, custom policy func
-- [ ] Create `pkg/retry/retry.go` with Retry(ctx, config, fn) function respecting context cancellation during backoff
-- [ ] Create `pkg/retry/retry_test.go` with unit tests for backoff calculation, policy evaluation, and retry execution
+- [x] Add `github.com/cenkalti/backoff/v5` for battle-tested exponential backoff with jitter
+- [x] Create `pkg/retry/config.go` with retry policies: PolicyTemporary (only Temporary errors), PolicyAll, PolicyNone, PolicyFunc (custom)
+- [x] Create `pkg/retry/retry.go` with Do(ctx, config, fn) and DoWithData[T](ctx, config, fn) functions respecting context cancellation
+- [x] Create `pkg/retry/retry_test.go` with comprehensive unit tests for retry execution, policies, backoff, and context cancellation
 
 **Success**:
-- Retry() executes function with exponential backoff up to configured max attempts
-- Backoff delay includes random jitter to prevent thundering herd
-- Context cancellation stops retry immediately during backoff sleep
-- Retry policies correctly classify errors: only Temporary errors retried with RetryTemporary policy
-- `go test ./pkg/retry/...` passes with >90% coverage
+- ✅ Retry() executes function with exponential backoff up to configured max attempts
+- ✅ Backoff delay includes random jitter (±25%) to prevent thundering herd
+- ✅ Context cancellation stops retry immediately during backoff sleep
+- ✅ Retry policies correctly classify errors: only Temporary errors retried with PolicyTemporary
+- ✅ `go test ./pkg/retry/...` passes with 91.7% coverage (>90%)
 
 ---
 
