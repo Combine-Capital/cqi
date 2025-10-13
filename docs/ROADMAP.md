@@ -4,8 +4,8 @@
 - [x] **Commit 1**: Project Foundation & Module Setup
 - [x] **Commit 2**: Foundation Packages (Errors & Config)
 - [x] **Commit 3**: Logging Package
-- [ ] **Commit 4**: Retry Package
-- [ ] **Commit 5**: Metrics Package
+- [x] **Commit 4**: Retry Package
+- [x] **Commit 5**: Metrics Package
 - [ ] **Commit 6**: Tracing Package
 - [ ] **Commit 7**: Database Package
 - [ ] **Commit 8**: Cache Package
@@ -44,17 +44,17 @@
 **Depends**: Commit 1
 
 **Deliverables**:
-- [ ] Create `pkg/errors/errors.go` with error type definitions: Permanent, Temporary, NotFound, InvalidInput, Unauthorized
-- [ ] Create `pkg/errors/wrapping.go` with error wrapping functions preserving type information
-- [ ] Create `pkg/errors/types.go` with type checking functions: IsPermanent, IsTemporary, IsNotFound, etc.
-- [ ] Create `pkg/errors/http.go` with HTTP status code mapping (404, 400, 401, 503, 500)
-- [ ] Create `pkg/errors/grpc.go` with gRPC status code mapping using google.golang.org/grpc/status
-- [ ] Create `pkg/errors/middleware.go` with RecoveryMiddleware for panic catching
-- [ ] Create `pkg/errors/errors_test.go` with unit tests for all error types and wrapping
-- [ ] Create `pkg/config/config.go` with config structs: DatabaseConfig, CacheConfig, EventBusConfig, ServerConfig, LogConfig, MetricsConfig, TracingConfig
-- [ ] Create `pkg/config/loader.go` with Load() and MustLoad() using viper for env vars and YAML/JSON
-- [ ] Create `pkg/config/validator.go` with validation for required fields and default values
-- [ ] Create `pkg/config/config_test.go` with unit tests for config loading and validation
+- [x] Create `pkg/errors/errors.go` with error type definitions: Permanent, Temporary, NotFound, InvalidInput, Unauthorized
+- [x] Create `pkg/errors/wrapping.go` with error wrapping functions preserving type information
+- [x] Create `pkg/errors/types.go` with type checking functions: IsPermanent, IsTemporary, IsNotFound, etc.
+- [x] Create `pkg/errors/http.go` with HTTP status code mapping (404, 400, 401, 503, 500)
+- [x] Create `pkg/errors/grpc.go` with gRPC status code mapping using google.golang.org/grpc/status
+- [x] Create `pkg/errors/middleware.go` with RecoveryMiddleware for panic catching
+- [x] Create `pkg/errors/errors_test.go` with unit tests for all error types and wrapping
+- [x] Create `pkg/config/config.go` with config structs: DatabaseConfig, CacheConfig, EventBusConfig, ServerConfig, LogConfig, MetricsConfig, TracingConfig
+- [x] Create `pkg/config/loader.go` with Load() and MustLoad() using viper for env vars and YAML/JSON
+- [x] Create `pkg/config/validator.go` with validation for required fields and default values
+- [x] Create `pkg/config/config_test.go` with unit tests for config loading and validation
 
 **Success**:
 - All error constructors return correct types: NewPermanent(), NewTemporary(), NewNotFound(), etc.
@@ -72,12 +72,12 @@
 **Depends**: Commit 2 (config, errors)
 
 **Deliverables**:
-- [ ] Add zerolog dependency: `github.com/rs/zerolog`
-- [ ] Create `pkg/logging/fields.go` with standard field constants: TraceID, SpanID, ServiceName, Timestamp, Level, Message, Error
-- [ ] Create `pkg/logging/logger.go` with Logger interface and zerolog implementation accepting LogConfig
-- [ ] Create `pkg/logging/context.go` with logger context propagation helpers for context.Context
-- [ ] Create `pkg/logging/middleware.go` with HTTP/gRPC middleware for request/response logging with duration and status
-- [ ] Create `pkg/logging/logging_test.go` with unit tests for logger creation, field injection, and middleware
+- [x] Add zerolog dependency: `github.com/rs/zerolog`
+- [x] Create `pkg/logging/fields.go` with standard field constants: TraceID, SpanID, ServiceName, Timestamp, Level, Message, Error
+- [x] Create `pkg/logging/logger.go` with Logger interface and zerolog implementation accepting LogConfig
+- [x] Create `pkg/logging/context.go` with logger context propagation helpers for context.Context
+- [x] Create `pkg/logging/middleware.go` with HTTP/gRPC middleware for request/response logging with duration and status
+- [x] Create `pkg/logging/logging_test.go` with unit tests for logger creation, field injection, and middleware
 
 **Success**:
 - Logger instance created from LogConfig with configurable log level (debug, info, warn, error)
@@ -109,25 +109,25 @@
 
 ---
 
-### Commit 5: Metrics Package
+### Commit 5: Metrics Package ✅
 
 **Goal**: Implement Prometheus metrics collection with standardized naming
 **Depends**: Commit 2 (config)
 
 **Deliverables**:
-- [ ] Add Prometheus dependency: `github.com/prometheus/client_golang/prometheus`
-- [ ] Create `pkg/metrics/metrics.go` with Init() function, registry, and HTTP handler on configured port/path
-- [ ] Create `pkg/metrics/collectors.go` with type-safe constructors: NewCounter, NewGauge, NewHistogram with label validation
-- [ ] Create `pkg/metrics/standard.go` with standard HTTP metrics (http_request_duration_seconds, http_request_count_total, http_request_size_bytes, http_response_size_bytes) and gRPC metrics (grpc_call_duration_seconds, grpc_call_count_total)
-- [ ] Create `pkg/metrics/middleware.go` with HTTP/gRPC middleware that automatically records metrics with labels (method, path, status_code)
-- [ ] Create `pkg/metrics/metrics_test.go` with unit tests for metric registration, collection, and middleware
+- [x] Add Prometheus dependency: `github.com/prometheus/client_golang/prometheus`
+- [x] Create `pkg/metrics/metrics.go` with Init() function, registry, and HTTP handler on configured port/path
+- [x] Create `pkg/metrics/collectors.go` with type-safe constructors: NewCounter, NewGauge, NewHistogram with label validation
+- [x] Create `pkg/metrics/standard.go` with standard HTTP metrics (http_request_duration_seconds, http_request_count_total, http_request_size_bytes, http_response_size_bytes) and gRPC metrics (grpc_call_duration_seconds, grpc_call_count_total)
+- [x] Create `pkg/metrics/middleware.go` with HTTP/gRPC middleware that automatically records metrics with labels (method, path, status_code)
+- [x] Create `pkg/metrics/metrics_test.go` with unit tests for metric registration, collection, and middleware
 
 **Success**:
-- Metrics endpoint `/metrics` returns Prometheus text exposition format
-- Metric naming follows convention: {service_name}_{subsystem}_{metric_name}
-- HTTP middleware records request_duration, request_count with labels for method, path, status_code
-- Duplicate metric registration is prevented with validation error
-- `go test ./pkg/metrics/...` passes with >90% coverage
+- ✅ Metrics endpoint `/metrics` returns Prometheus text exposition format
+- ✅ Metric naming follows convention: {service_name}_{subsystem}_{metric_name}
+- ✅ HTTP middleware records request_duration, request_count with labels for method, path, status_code
+- ✅ Duplicate metric registration is prevented with validation error
+- ✅ `go test ./pkg/metrics/...` passes with 91.5% coverage (>90%)
 
 ---
 
