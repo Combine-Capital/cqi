@@ -49,8 +49,26 @@
 - Provide error middleware: translate errors to HTTP status codes and gRPC status codes
 - Provide panic recovery middleware for HTTP/gRPC with logging and metrics
 
+#### Service Lifecycle Management
+- Provide Service interface for microservice lifecycle: Start(ctx), Stop(ctx), Name(), Health()
+- Integrate configuration, logging, metrics, tracing initialization into service bootstrap
+- Provide graceful shutdown with configurable timeout, signal handling (SIGTERM, SIGINT), and cleanup hooks
+- Support multiple server types: HTTP, gRPC with unified lifecycle management
+
+#### Service Discovery & Registration
+- Provide Registry interface for service registration and discovery: Register(ctx, service), Deregister(ctx, service), Discover(ctx, serviceName)
+- Support local registry backend (in-memory) for development and testing
+- Support Redis registry backend for distributed service discovery with TTL-based health
+- Service metadata: name, version, address, port, health endpoint, registration timestamp
+
+#### Service Orchestration
+- Provide Runner for concurrent service/task management: Add(service), Start(ctx), Stop(ctx)
+- Handle service dependencies and startup ordering with configurable delay
+- Automatic restart on failure with exponential backoff and max retry limits
+- Aggregate health checks across all managed services
+
 #### Project Organization
-- Organize code in pkg/ with subpackages: bus/, database/, cache/, logging/, metrics/, tracing/, config/, auth/, retry/, errors/, health/
+- Organize code in pkg/ with subpackages: bus/, database/, cache/, logging/, metrics/, tracing/, config/, auth/, retry/, errors/, health/, service/, registry/, runner/
 - Document each package with usage examples
 - Provide example configs and integration tests with CQC types
 
@@ -59,7 +77,7 @@
 - Circuit breaker with configurable thresholds, timeout, half-open testing
 - Rate limiting (token bucket/sliding window) per client/endpoint
 - Secret management integration (Vault/AWS Secrets Manager) with rotation
-- Service discovery (Consul/Kubernetes)
+- etcd3 registry backend for production service discovery
 - Distributed locks (Redis/database)
 - Graceful degradation for optional dependencies
 

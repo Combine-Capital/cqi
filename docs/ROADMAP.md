@@ -13,7 +13,10 @@
 - [x] **Commit 10**: Authentication Package
 - [x] **Commit 11**: Health Check Framework
 - [x] **Commit 12**: Examples & Integration Tests
-- [ ] **Commit 13**: Documentation & Release Preparation
+- [ ] **Commit 13**: Service Lifecycle Management
+- [ ] **Commit 14**: Service Discovery & Registration
+- [ ] **Commit 15**: Service Orchestration & Runner
+- [ ] **Commit 16**: Documentation & Release Preparation
 
 ## Implementation Sequence
 
@@ -311,24 +314,100 @@
 
 ---
 
-### Commit 13: Documentation & Release Preparation
+### Commit 13: Service Lifecycle Management
 
-**Goal**: Complete package documentation and prepare for initial release
-**Depends**: Commit 12
+**Goal**: Implement service abstraction for microservice lifecycle management with graceful shutdown
+**Depends**: Commit 2 (config), Commit 3 (logging), Commit 5 (metrics), Commit 6 (tracing), Commit 11 (health)
 
 **Deliverables**:
-- [ ] Add package-level godoc to all 11 packages in `pkg/` with overview and usage example
+- [ ] Create `pkg/service/service.go` with Service interface: Start(ctx) error, Stop(ctx) error, Name() string, Health() error
+- [ ] Create `pkg/service/http.go` with HTTPService implementation managing HTTP server lifecycle with graceful shutdown
+- [ ] Create `pkg/service/grpc.go` with GRPCService implementation managing gRPC server lifecycle with graceful shutdown
+- [ ] Create `pkg/service/bootstrap.go` with service initialization helpers integrating config, logging, metrics, tracing
+- [ ] Create `pkg/service/shutdown.go` with signal handling (SIGTERM, SIGINT), configurable timeout, and cleanup hooks
+- [ ] Add ServiceConfig to `pkg/config/config.go` with shutdown timeout, server address/port settings
+- [ ] Create `pkg/service/service_test.go` with unit tests for lifecycle, shutdown, and signal handling
+
+**Success**:
+- Service interface provides unified lifecycle for HTTP and gRPC servers
+- Bootstrap helpers initialize all observability components (logging, metrics, tracing) from config
+- Graceful shutdown waits for in-flight requests with configurable timeout before force closing
+- Signal handlers (SIGTERM, SIGINT) trigger graceful shutdown automatically
+- Cleanup hooks execute in reverse registration order (LIFO) during shutdown
+- `go test ./pkg/service/...` passes with >90% coverage
+
+---
+
+### Commit 14: Service Discovery & Registration
+
+**Goal**: Implement service registry for dynamic service discovery and registration
+**Depends**: Commit 2 (config), Commit 3 (logging), Commit 8 (cache/redis)
+
+**Deliverables**:
+- [ ] Create `pkg/registry/registry.go` with Registry interface: Register(ctx, service) error, Deregister(ctx, service) error, Discover(ctx, serviceName) ([]ServiceInfo, error)
+- [ ] Create `pkg/registry/service_info.go` with ServiceInfo struct: Name, Version, Address, Port, HealthEndpoint, Metadata, RegisteredAt
+- [ ] Create `pkg/registry/local.go` with LocalRegistry implementation using sync.Map for in-memory registration (development/testing)
+- [ ] Create `pkg/registry/redis.go` with RedisRegistry implementation using Redis with TTL-based health and periodic heartbeat
+- [ ] Create `pkg/registry/heartbeat.go` with automatic heartbeat mechanism to refresh service TTL and handle registration renewal
+- [ ] Add RegistryConfig to `pkg/config/config.go` with backend type (local/redis), heartbeat interval, TTL settings
+- [ ] Create `pkg/registry/registry_test.go` with unit tests for registration, discovery, TTL expiration, and heartbeat
+
+**Success**:
+- Services register with name, version, address, port, health endpoint metadata
+- LocalRegistry provides fast in-memory lookup for development and testing
+- RedisRegistry stores service info with TTL (default 30s), automatic expiration on unhealthy services
+- Heartbeat goroutine refreshes TTL every interval (default 10s) to maintain registration
+- Discover returns all healthy instances of requested service name sorted by registration time
+- Deregister removes service from registry and stops heartbeat
+- `go test ./pkg/registry/...` passes with >90% coverage
+
+---
+
+### Commit 15: Service Orchestration & Runner
+
+**Goal**: Implement runner for managing multiple services with dependency handling and restart logic
+**Depends**: Commit 13 (service), Commit 14 (registry)
+
+**Deliverables**:
+- [ ] Create `pkg/runner/runner.go` with Runner struct and methods: Add(service Service, opts ...Option), Start(ctx) error, Stop(ctx) error
+- [ ] Create `pkg/runner/options.go` with service options: WithDependsOn(names ...string), WithStartDelay(duration), WithRestartPolicy(policy)
+- [ ] Create `pkg/runner/restart.go` with restart policies: Never, Always, OnFailure with exponential backoff and max retry limits
+- [ ] Create `pkg/runner/health.go` with aggregate health check across all managed services for unified health endpoint
+- [ ] Create `pkg/runner/ordering.go` with dependency resolution and startup ordering using topological sort
+- [ ] Add RunnerConfig to `pkg/config/config.go` with restart settings, max retries, backoff configuration
+- [ ] Create `pkg/runner/runner_test.go` with unit tests for service ordering, restart policies, and aggregate health
+
+**Success**:
+- Runner starts services in dependency order respecting WithDependsOn relationships
+- Services with start delays wait configured duration before starting
+- Failed services restart according to policy: OnFailure with exponential backoff (1s, 2s, 4s...) up to max retries
+- Runner.Stop gracefully stops all services in reverse startup order (dependencies last)
+- Aggregate health returns unhealthy if any managed service fails health check
+- Context cancellation stops all services immediately without waiting for natural completion
+- `go test ./pkg/runner/...` passes with >90% coverage
+
+---
+
+### Commit 16: Documentation & Release Preparation
+
+**Goal**: Complete package documentation and prepare for initial release
+**Depends**: Commit 15
+
+**Deliverables**:
+- [ ] Add package-level godoc to all 14 packages in `pkg/` with overview and usage example (service, registry, runner added)
 - [ ] Update `README.md` with installation instructions, quick start guide (15 line example), architecture overview, and links to examples
+- [ ] Update `examples/full/main.go` to demonstrate service, registry, and runner usage patterns
 - [ ] Create `CONTRIBUTING.md` with development setup, testing guidelines, and PR process
-- [ ] Create `CHANGELOG.md` with v0.1.0 release notes listing all MVP features
+- [ ] Create `CHANGELOG.md` with v0.1.0 release notes listing all MVP features including new components
 - [ ] Verify all unit tests pass: `go test ./pkg/...` >90% coverage
 - [ ] Verify all integration tests pass: `go test ./test/integration/...` with Docker infrastructure
 - [ ] Run `go mod tidy` to clean up dependencies
 - [ ] Tag release: `git tag v0.1.0`
 
 **Success**:
-- All packages have godoc that shows up in pkg.go.dev after publish
-- README demonstrates complete service setup in 15-20 lines matching BRIEF success criteria
+- All 14 packages have godoc that shows up in pkg.go.dev after publish
+- README demonstrates complete service setup with lifecycle management and service discovery
+- Examples show runner managing multiple services with registry integration
 - `go test ./...` passes with >90% total coverage
 - `go test -race ./...` passes with no race conditions detected
 - Module is ready for consumption: `go get github.com/Combine-Capital/cqi@v0.1.0` works

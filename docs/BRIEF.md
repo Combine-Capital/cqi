@@ -66,12 +66,30 @@ Shared infrastructure library providing event bus, database, cache, logging, met
 - [MVP] Document each package with usage examples
 - [MVP] Provide example configs and integration tests with CQC types
 
+### Service Lifecycle Management
+- [MVP] Provide Service interface for microservice lifecycle: Start(ctx), Stop(ctx), Name(), Health()
+- [MVP] Integrate configuration, logging, metrics, tracing initialization into service bootstrap
+- [MVP] Provide graceful shutdown with configurable timeout, signal handling (SIGTERM, SIGINT), and cleanup hooks
+- [MVP] Support multiple server types: HTTP, gRPC with unified lifecycle management
+
+### Service Discovery & Registration
+- [MVP] Provide Registry interface for service registration and discovery: Register(ctx, service), Deregister(ctx, service), Discover(ctx, serviceName)
+- [MVP] Support local registry backend (in-memory) for development and testing
+- [MVP] Support Redis registry backend for distributed service discovery with TTL-based health
+- [MVP] Service metadata: name, version, address, port, health endpoint, registration timestamp
+
+### Service Orchestration
+- [MVP] Provide Runner for concurrent service/task management: Add(service), Start(ctx), Stop(ctx)
+- [MVP] Handle service dependencies and startup ordering with configurable delay
+- [MVP] Automatic restart on failure with exponential backoff and max retry limits
+- [MVP] Aggregate health checks across all managed services
+
 ### Post-MVP Features
 - [Post MVP] Contribute infrastructure protobufs to CQC for platform standardization
 - [Post MVP] Circuit breaker with configurable thresholds, timeout, half-open testing
 - [Post MVP] Rate limiting (token bucket/sliding window) per client/endpoint
 - [Post MVP] Secret management integration (Vault/AWS Secrets Manager) with rotation
-- [Post MVP] Service discovery (Consul/Kubernetes)
+- [Post MVP] etcd3 registry backend for production service discovery
 - [Post MVP] Distributed locks (Redis/database)
 - [Post MVP] Graceful degradation for optional dependencies
 
