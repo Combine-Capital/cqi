@@ -33,10 +33,13 @@ func Validate(cfg *Config) error {
 		}
 	}
 
-	// Validate EventBus config (if used with Kafka)
-	if cfg.EventBus.Backend == "kafka" && len(cfg.EventBus.Brokers) > 0 {
-		if cfg.EventBus.ConsumerGroup == "" {
-			return fmt.Errorf("eventbus.consumer_group is required when brokers are configured")
+	// Validate EventBus config (if used with JetStream)
+	if cfg.EventBus.Backend == "jetstream" && len(cfg.EventBus.Servers) > 0 {
+		if cfg.EventBus.StreamName == "" {
+			return fmt.Errorf("eventbus.stream_name is required when servers are configured")
+		}
+		if cfg.EventBus.ConsumerName == "" {
+			return fmt.Errorf("eventbus.consumer_name is required when servers are configured")
 		}
 	}
 
@@ -137,29 +140,26 @@ func applyDefaults(cfg *Config) {
 	}
 
 	// EventBus defaults
-	if cfg.EventBus.Backend == "" && len(cfg.EventBus.Brokers) > 0 {
-		cfg.EventBus.Backend = "kafka"
+	if cfg.EventBus.Backend == "" && len(cfg.EventBus.Servers) > 0 {
+		cfg.EventBus.Backend = "jetstream"
 	}
 	if cfg.EventBus.Backend == "" {
 		cfg.EventBus.Backend = "memory" // Default to memory for testing
 	}
-	if cfg.EventBus.ConsumerGroup == "" && len(cfg.EventBus.Brokers) > 0 {
-		cfg.EventBus.ConsumerGroup = "default"
+	if cfg.EventBus.StreamName == "" && len(cfg.EventBus.Servers) > 0 {
+		cfg.EventBus.StreamName = "cqc_events"
 	}
-	if cfg.EventBus.ConnectRetry == 0 {
-		cfg.EventBus.ConnectRetry = 3
+	if cfg.EventBus.ConsumerName == "" && len(cfg.EventBus.Servers) > 0 {
+		cfg.EventBus.ConsumerName = "default"
 	}
-	if cfg.EventBus.ReadTimeout == 0 {
-		cfg.EventBus.ReadTimeout = 10 * time.Second
+	if cfg.EventBus.MaxDeliver == 0 {
+		cfg.EventBus.MaxDeliver = 3
 	}
-	if cfg.EventBus.WriteTimeout == 0 {
-		cfg.EventBus.WriteTimeout = 10 * time.Second
+	if cfg.EventBus.AckWait == 0 {
+		cfg.EventBus.AckWait = 30 * time.Second
 	}
-	if cfg.EventBus.BatchSize == 0 {
-		cfg.EventBus.BatchSize = 100
-	}
-	if cfg.EventBus.BatchTimeout == 0 {
-		cfg.EventBus.BatchTimeout = time.Second
+	if cfg.EventBus.MaxAckPending == 0 {
+		cfg.EventBus.MaxAckPending = 1000
 	}
 
 	// Log defaults

@@ -9,7 +9,7 @@
 #### Event Bus & Messaging
 - Import CQC event types from github.com/Combine-Capital/cqc/gen/go/cqc/events/v1
 - Provide event bus interface: Publish(ctx, topic, proto.Message) error and Subscribe(ctx, topic, handler) error
-- Support in-memory backend (testing) and Kafka backend (production) with automatic protobuf serialization
+- Support in-memory backend (testing) and NATS JetStream backend (production) with automatic protobuf serialization
 - Provide subscriber middleware for logging, metrics, error handling, and retry
 - Define topic naming convention: "cqc.events.v1.{event_type}"
 
@@ -70,7 +70,7 @@
 - **Protocol Buffers v3** - Message serialization format (via CQC dependency), type-safe event contracts
 - **PostgreSQL 14+** - Relational database, ACID compliance, connection pooling via pgx
 - **Redis 7+** - In-memory cache, low-latency data access, native protobuf serialization
-- **Kafka 3.0+** - Distributed event streaming, at-least-once delivery, horizontal scalability
+- **NATS JetStream 2.10+** - Lightweight distributed messaging, at-least-once delivery, built-in persistence, easier deployment than Kafka
 
 ### Observability Stack
 - **zerolog** - Zero-allocation structured logging, 10x faster than standard library, JSON output
@@ -81,12 +81,12 @@
 - **viper** - Configuration management, env/file/flag support, widely adopted
 - **pgx/v5** - PostgreSQL driver, prepared statements, connection pooling, best-in-class performance
 - **go-redis/v9** - Redis client, cluster support, pipelining, context support
-- **segmentio/kafka-go** - Kafka client, zero-dependencies, context support, balanced consumer groups
+- **nats.go** - NATS client, JetStream support, pure Go, context support, durable consumers
 
 ### Justification for Choices
 - **zerolog over zap**: Zero allocation in hot paths, simpler API, better performance (though both are excellent)
 - **pgx over database/sql**: Native PostgreSQL features, better performance, prepared statement cache
-- **segmentio/kafka-go over confluent**: Pure Go, no CGO dependencies, easier deployment, sufficient features for MVP
+- **NATS JetStream over Kafka**: Significantly lighter weight (single binary vs JVM + Zookeeper), simpler operations, built-in persistence, sufficient throughput for MVP, easier clustering
 - **viper**: De facto standard for Go config management, supports all required formats
 
 ## Architecture
@@ -124,7 +124,7 @@
 │  │  │ pkg/bus/   │  │ pkg/db/  │  │ pkg/cache│  │ pkg/metrics/│  │  │
 │  │  │            │  │          │  │          │  │             │  │  │
 │  │  │ EventBus   │  │ ConnPool │  │ Redis    │  │ Prometheus  │  │  │
-│  │  │ - Kafka    │  │ Query    │  │ Proto    │  │ Counters    │  │  │
+│  │  │ -JetStream │  │ Query    │  │ Proto    │  │ Counters    │  │  │
 │  │  │ - Memory   │  │ Exec     │  │ Serialize│  │ Gauges      │  │  │
 │  │  │ Middleware │  │ Tx Mgmt  │  │ CacheKey │  │ Histograms  │  │  │
 │  │  └────────────┘  └──────────┘  └──────────┘  └─────────────┘  │  │
@@ -153,8 +153,8 @@
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                       External Infrastructure                             │
 │  ┌────────────┐  ┌────────────┐  ┌───────────┐  ┌──────────────┐       │
-│  │ PostgreSQL │  │   Redis    │  │   Kafka   │  │  Prometheus  │       │
-│  │  Database  │  │   Cache    │  │  Events   │  │   Metrics    │       │
+│  │ PostgreSQL │  │   Redis    │  │   NATS    │  │  Prometheus  │       │
+│  │  Database  │  │   Cache    │  │ JetStream │  │   Metrics    │       │
 │  └────────────┘  └────────────┘  └───────────┘  └──────────────┘       │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -202,7 +202,7 @@ func main() {
     defer cache.Close()
     
     // Initialize event bus
-    eventBus := bus.NewKafka(cfg.EventBus)
+    eventBus := bus.NewJetStream(cfg.EventBus)
     defer eventBus.Close()
     
     // Initialize health checks
@@ -433,7 +433,7 @@ func (s *Service) SetupRouter() *http.ServeMux {
 **Post-MVP:**
 - Automatic database query span creation with SQL text
 - Custom span attributes for business operations
-- Trace context propagation to Kafka messages
+- Trace context propagation to NATS messages
 
 ---
 
@@ -441,36 +441,36 @@ func (s *Service) SetupRouter() *http.ServeMux {
 **Purpose:** Publish/subscribe event bus with CQC protobuf message support and multiple backends
 
 **Inputs:** 
-- EventBusConfig (backend type, Kafka brokers/topics, consumer group)
+- EventBusConfig (backend type, NATS server URLs, stream name, consumer config)
 - CQC protobuf events to publish
 - Event handlers to subscribe
 
 **Outputs:** 
-- Events published to Kafka topics (production) or in-memory channels (testing)
+- Events published to NATS JetStream subjects (production) or in-memory channels (testing)
 - Subscribed handlers invoked with deserialized protobuf messages
 
 **Dependencies:** 
 - github.com/Combine-Capital/cqc (event type definitions)
-- segmentio/kafka-go (Kafka client)
+- github.com/nats-io/nats.go (NATS client with JetStream support)
 - google.golang.org/protobuf (protobuf serialization)
 
 **Key Responsibilities:**
 - Define EventBus interface: Publish(ctx, topic, proto.Message) error and Subscribe(ctx, topic, handler) error
-- Implement KafkaEventBus with segmentio/kafka-go for production
+- Implement JetStreamEventBus with nats.go for production
 - Implement MemoryEventBus with Go channels for testing/development
 - Serialize protobuf messages to wire format before publishing
 - Deserialize wire format to protobuf messages before handler invocation
 - Enforce topic naming convention: "cqc.events.v1.{event_type}"
 - Provide subscriber middleware interface: logging, metrics, error handling, retry
 - Support middleware chaining: WithRetry, WithLogging, WithMetrics options
-- Handle Kafka consumer group rebalancing gracefully
+- Handle JetStream consumer acknowledgments and redelivery gracefully
 - Provide graceful shutdown: flush pending messages, close connections
 
 **Post-MVP:**
-- Dead letter queue for failed messages after retries
-- Message compression (gzip, snappy)
-- Schema registry integration for version enforcement
-- Event replay from offset
+- Dead letter queue for failed messages after retries (using NATS streams)
+- Message deduplication using NATS message IDs
+- Work queue patterns with explicit acknowledgment
+- Stream replay from sequence number or time
 
 ---
 
@@ -723,9 +723,9 @@ cqi/
 │   │   ├── propagation.go          # Trace context injection/extraction
 │   │   └── tracing_test.go         # Unit tests for tracing
 │   │
-│   ├── bus/                        # Event bus with Kafka and in-memory backends
+│   ├── bus/                        # Event bus with NATS JetStream and in-memory backends
 │   │   ├── bus.go                  # EventBus interface: Publish, Subscribe
-│   │   ├── kafka.go                # KafkaEventBus implementation
+│   │   ├── jetstream.go            # JetStreamEventBus implementation
 │   │   ├── memory.go               # MemoryEventBus implementation (testing)
 │   │   ├── middleware.go           # Subscriber middleware: retry, logging, metrics
 │   │   ├── topics.go               # Topic naming convention helpers
@@ -787,8 +787,8 @@ cqi/
 │   ├── integration/
 │   │   ├── database_test.go        # Database integration tests (real Postgres)
 │   │   ├── cache_test.go           # Cache integration tests (real Redis)
-│   │   ├── bus_test.go             # Event bus integration tests (real Kafka)
-│   │   └── docker-compose.yml      # Test infrastructure (Postgres, Redis, Kafka)
+│   │   ├── bus_test.go             # Event bus integration tests (real NATS JetStream)
+│   │   └── docker-compose.yml      # Test infrastructure (Postgres, Redis, NATS)
 │   └── testdata/
 │       ├── configs/                # Test configuration files
 │       └── fixtures/               # Test data fixtures
@@ -835,10 +835,11 @@ cache:
   database: 0
 
 event_bus:
-  backend: "kafka"  # or "memory" for testing
-  brokers:
-    - "${CQI_KAFKA_BROKER:localhost:9092}"
-  consumer_group: "cqpm"
+  backend: "jetstream"  # or "memory" for testing
+  servers:
+    - "${CQI_NATS_SERVER:nats://localhost:4222}"
+  stream_name: "cqc_events"
+  consumer_name: "cqpm"
 
 logging:
   level: "${LOG_LEVEL:info}"
@@ -1061,12 +1062,12 @@ endpoints, err := disco.Resolve(ctx, "cqmd")
 
 ### Unit Tests (pkg/*_test.go)
 - Each package has comprehensive unit tests
-- Mock external dependencies (database, Redis, Kafka)
+- Mock external dependencies (database, Redis, NATS)
 - Test error handling, edge cases, configuration validation
 - Target: >90% code coverage
 
 ### Integration Tests (test/integration/)
-- Real infrastructure via Docker Compose (Postgres, Redis, Kafka)
+- Real infrastructure via Docker Compose (Postgres, Redis, NATS JetStream)
 - Test actual database queries, cache operations, event publishing
 - Verify health checks work with real components
 - Run in CI pipeline before merge

@@ -207,27 +207,27 @@
 
 ### Commit 9: Event Bus Package
 
-**Goal**: Implement event bus with Kafka and in-memory backends
+**Goal**: Implement event bus with NATS JetStream and in-memory backends
 **Depends**: Commit 1 (CQC dependency), Commit 2 (config), Commit 3 (logging), Commit 4 (retry), Commit 5 (metrics)
 
 **Deliverables**:
-- [ ] Add Kafka dependency: `github.com/segmentio/kafka-go`
+- [ ] Add NATS dependency: `github.com/nats-io/nats.go`
 - [ ] Import CQC event types: `github.com/Combine-Capital/cqc/gen/go/cqc/events/v1`
 - [ ] Create `pkg/bus/bus.go` with EventBus interface: Publish(ctx, topic, proto.Message) error, Subscribe(ctx, topic, handler) error
-- [ ] Create `pkg/bus/kafka.go` with KafkaEventBus implementation using segmentio/kafka-go with broker list and consumer group from EventBusConfig
+- [ ] Create `pkg/bus/jetstream.go` with JetStreamEventBus implementation using nats.go with server URLs and stream config from EventBusConfig
 - [ ] Create `pkg/bus/memory.go` with MemoryEventBus using Go channels for testing/development
 - [ ] Create `pkg/bus/topics.go` with topic naming convention helpers: TopicName(eventType) returns "cqc.events.v1.{event_type}"
 - [ ] Create `pkg/bus/middleware.go` with subscriber middleware: WithRetry, WithLogging, WithMetrics options for handler chaining
 - [ ] Create `pkg/bus/bus_test.go` with unit tests for both backends and middleware
 
 **Success**:
-- Publish serializes CQC protobuf events to wire format before sending to Kafka topic
+- Publish serializes CQC protobuf events to wire format before sending to JetStream subject
 - Subscribe deserializes wire format to protobuf events before invoking handler
 - Topic names follow convention: "cqc.events.v1.asset_created", "cqc.events.v1.position_changed"
 - Subscriber middleware chains: logging logs event type/size, metrics records handler duration, retry retries on Temporary errors
-- KafkaEventBus handles consumer group rebalancing gracefully
+- JetStreamEventBus handles consumer management and acknowledgments gracefully
 - MemoryEventBus delivers messages via channels for fast testing
-- Graceful shutdown flushes pending messages and closes Kafka connections
+- Graceful shutdown flushes pending messages and closes NATS connections
 - `go test ./pkg/bus/...` passes with >90% coverage
 
 ---
@@ -266,7 +266,7 @@
 - [ ] Create `pkg/health/handlers.go` with HTTP handlers: LivenessHandler() returns 200 if service running (no dependency checks), ReadinessHandler() returns 200 if all checkers pass, 503 otherwise
 - [ ] Implement database health checker in `pkg/database/health.go` executing SELECT 1 with 5 second timeout
 - [ ] Implement cache health checker in `pkg/cache/health.go` executing Redis PING with 5 second timeout
-- [ ] Implement event bus health checker in `pkg/bus/kafka.go` verifying broker connectivity with 5 second timeout
+- [ ] Implement event bus health checker in `pkg/bus/jetstream.go` verifying server connectivity with 5 second timeout
 - [ ] Create `pkg/health/health_test.go` with unit tests for health check registration and execution
 
 **Success**:
@@ -290,18 +290,18 @@
 - [ ] Create `examples/full/main.go` demonstrating all packages: config, logging, metrics, tracing, database, cache, bus, auth, health
 - [ ] Create `examples/full/config.yaml` with complete configuration example including all infrastructure components
 - [ ] Create `examples/full/README.md` with step-by-step setup and running instructions
-- [ ] Create `test/integration/docker-compose.yml` with Postgres 14, Redis 7, Kafka 3.0 services
+- [ ] Create `test/integration/docker-compose.yml` with Postgres 14, Redis 7, NATS JetStream services
 - [ ] Create `test/integration/database_test.go` with integration tests connecting to real Postgres (Query, Exec, transactions)
 - [ ] Create `test/integration/cache_test.go` with integration tests connecting to real Redis (Get, Set, Delete, protobuf serialization)
-- [ ] Create `test/integration/bus_test.go` with integration tests connecting to real Kafka (Publish, Subscribe, middleware)
+- [ ] Create `test/integration/bus_test.go` with integration tests connecting to real NATS JetStream (Publish, Subscribe, middleware)
 - [ ] Create `test/testdata/configs/test_config.yaml` with test configuration
 - [ ] Create `internal/common/testutil/containers.go` with Docker container setup helpers for tests
 
 **Success**:
 - `cd examples/simple && go run main.go` starts service successfully with config loaded and database connected
-- `cd examples/full && go run main.go` starts service with all infrastructure initialized (DB, cache, Kafka, metrics, tracing, health endpoints)
-- `docker-compose -f test/integration/docker-compose.yml up -d` starts Postgres, Redis, Kafka containers
-- `go test ./test/integration/...` passes with real Postgres, Redis, Kafka connections (all integration tests green)
+- `cd examples/full && go run main.go` starts service with all infrastructure initialized (DB, cache, NATS JetStream, metrics, tracing, health endpoints)
+- `docker-compose -f test/integration/docker-compose.yml up -d` starts Postgres, Redis, NATS JetStream containers
+- `go test ./test/integration/...` passes with real Postgres, Redis, NATS JetStream connections (all integration tests green)
 - Integration tests verify actual database queries, cache operations, event publishing/subscribing
 - Examples serve as documentation showing real usage patterns with CQC event types
 

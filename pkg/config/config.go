@@ -78,17 +78,15 @@ type CacheConfig struct {
 	DefaultTTL   time.Duration `mapstructure:"default_ttl"`
 }
 
-// EventBusConfig contains event bus (Kafka) configuration.
+// EventBusConfig contains event bus (NATS JetStream) configuration.
 type EventBusConfig struct {
-	Backend       string        `mapstructure:"backend"` // "kafka" or "memory"
-	Brokers       []string      `mapstructure:"brokers"`
-	ConsumerGroup string        `mapstructure:"consumer_group"`
-	ClientID      string        `mapstructure:"client_id"`
-	ConnectRetry  int           `mapstructure:"connect_retry"`
-	ReadTimeout   time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout  time.Duration `mapstructure:"write_timeout"`
-	BatchSize     int           `mapstructure:"batch_size"`
-	BatchTimeout  time.Duration `mapstructure:"batch_timeout"`
+	Backend       string        `mapstructure:"backend"`         // "jetstream" or "memory"
+	Servers       []string      `mapstructure:"servers"`         // NATS server URLs
+	StreamName    string        `mapstructure:"stream_name"`     // JetStream stream name
+	ConsumerName  string        `mapstructure:"consumer_name"`   // Durable consumer name
+	MaxDeliver    int           `mapstructure:"max_deliver"`     // Max delivery attempts
+	AckWait       time.Duration `mapstructure:"ack_wait"`        // Acknowledgment timeout
+	MaxAckPending int           `mapstructure:"max_ack_pending"` // Max outstanding unacked messages
 }
 
 // LogConfig contains structured logging configuration.

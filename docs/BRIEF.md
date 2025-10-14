@@ -21,7 +21,7 @@ Shared infrastructure library providing event bus, database, cache, logging, met
 ### Event Bus & Messaging
 - [MVP] Import CQC event types from github.com/Combine-Capital/cqc/gen/go/cqc/events/v1 (AssetCreated, PriceUpdated, OrderPlaced, PositionChanged, RiskAlert)
 - [MVP] Provide event bus interface: Publish(ctx, topic, proto.Message) error and Subscribe(ctx, topic, handler) error
-- [MVP] Support in-memory backend (testing) and Kafka backend (production) with automatic protobuf serialization
+- [MVP] Support in-memory backend (testing) and NATS JetStream backend (production) with automatic protobuf serialization
 - [MVP] Provide subscriber middleware for logging, metrics, error handling, and retry
 - [MVP] Define topic naming convention: "cqc.events.v1.{event_type}"
 
@@ -80,4 +80,4 @@ Shared infrastructure library providing event bus, database, cache, logging, met
 2. **Type Safety**: Zero serialization errors in production over 30-day measurement period
 3. **Observability**: Single monitoring dashboard supports all services, new service setup <5 minutes
 4. **Development Velocity**: New service fully instrumented (DB, cache, events, logs, metrics, traces) in <30 minutes
-5. **Reliability**: >90% test coverage with integration tests against Postgres, Redis, Kafka
+5. **Reliability**: >90% test coverage with integration tests against Postgres, Redis, NATS JetStream

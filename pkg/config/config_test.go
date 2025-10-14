@@ -40,10 +40,11 @@ cache:
   db: 0
 
 eventbus:
-  backend: kafka
-  brokers:
-    - localhost:9092
-  consumer_group: test-group
+  backend: jetstream
+  servers:
+    - nats://localhost:4222
+  stream_name: cqc_events
+  consumer_name: test-group
 
 log:
   level: debug
@@ -215,13 +216,27 @@ func TestValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid - kafka missing consumer group",
+			name: "invalid - jetstream missing consumer name",
 			cfg: &Config{
 				Server: ServerConfig{HTTPPort: 8080},
 				EventBus: EventBusConfig{
-					Backend: "kafka",
-					Brokers: []string{"localhost:9092"},
-					// ConsumerGroup missing
+					Backend:    "jetstream",
+					Servers:    []string{"nats://localhost:4222"},
+					StreamName: "cqc_events",
+					// ConsumerName missing
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid - jetstream missing stream name",
+			cfg: &Config{
+				Server: ServerConfig{HTTPPort: 8080},
+				EventBus: EventBusConfig{
+					Backend:      "jetstream",
+					Servers:      []string{"nats://localhost:4222"},
+					ConsumerName: "test",
+					// StreamName missing
 				},
 			},
 			wantErr: true,
@@ -310,8 +325,11 @@ func TestApplyDefaults(t *testing.T) {
 	if cfg.EventBus.Backend != "memory" {
 		t.Errorf("EventBus.Backend = %v, want %v", cfg.EventBus.Backend, "memory")
 	}
-	if cfg.EventBus.BatchSize != 100 {
-		t.Errorf("EventBus.BatchSize = %v, want %v", cfg.EventBus.BatchSize, 100)
+	if cfg.EventBus.MaxDeliver != 3 {
+		t.Errorf("EventBus.MaxDeliver = %v, want %v", cfg.EventBus.MaxDeliver, 3)
+	}
+	if cfg.EventBus.AckWait != 30*time.Second {
+		t.Errorf("EventBus.AckWait = %v, want %v", cfg.EventBus.AckWait, 30*time.Second)
 	}
 
 	// Verify metrics defaults
@@ -375,25 +393,34 @@ func TestApplyDefaultsWithCache(t *testing.T) {
 	}
 }
 
-// TestApplyDefaultsWithKafka verifies Kafka-specific defaults
-func TestApplyDefaultsWithKafka(t *testing.T) {
+// TestApplyDefaultsWithJetStream verifies JetStream-specific defaults
+func TestApplyDefaultsWithJetStream(t *testing.T) {
 	cfg := &Config{
 		Server: ServerConfig{HTTPPort: 8080},
 		EventBus: EventBusConfig{
-			Brokers: []string{"localhost:9092"},
+			Servers: []string{"nats://localhost:4222"},
 		},
 	}
 
 	applyDefaults(cfg)
 
-	if cfg.EventBus.Backend != "kafka" {
-		t.Errorf("EventBus.Backend = %v, want %v", cfg.EventBus.Backend, "kafka")
+	if cfg.EventBus.Backend != "jetstream" {
+		t.Errorf("EventBus.Backend = %v, want %v", cfg.EventBus.Backend, "jetstream")
 	}
-	if cfg.EventBus.ConsumerGroup != "default" {
-		t.Errorf("EventBus.ConsumerGroup = %v, want %v", cfg.EventBus.ConsumerGroup, "default")
+	if cfg.EventBus.StreamName != "cqc_events" {
+		t.Errorf("EventBus.StreamName = %v, want %v", cfg.EventBus.StreamName, "cqc_events")
 	}
-	if cfg.EventBus.ConnectRetry != 3 {
-		t.Errorf("EventBus.ConnectRetry = %v, want %v", cfg.EventBus.ConnectRetry, 3)
+	if cfg.EventBus.ConsumerName != "default" {
+		t.Errorf("EventBus.ConsumerName = %v, want %v", cfg.EventBus.ConsumerName, "default")
+	}
+	if cfg.EventBus.MaxDeliver != 3 {
+		t.Errorf("EventBus.MaxDeliver = %v, want %v", cfg.EventBus.MaxDeliver, 3)
+	}
+	if cfg.EventBus.AckWait != 30*time.Second {
+		t.Errorf("EventBus.AckWait = %v, want %v", cfg.EventBus.AckWait, 30*time.Second)
+	}
+	if cfg.EventBus.MaxAckPending != 1000 {
+		t.Errorf("EventBus.MaxAckPending = %v, want %v", cfg.EventBus.MaxAckPending, 1000)
 	}
 }
 
