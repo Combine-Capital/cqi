@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package cache.test;
+
+option go_package = "github.com/Combine-Capital/cqi/pkg/cache/testproto";
+
+// TestMessage is a simple protobuf message for testing cache operations.
+message TestMessage {
+  string id = 1;
+  string name = 2;
+  int64 value = 3;
+  repeated string tags = 4;
+}
