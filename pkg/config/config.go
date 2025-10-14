@@ -28,6 +28,8 @@ type Config struct {
 	Metrics  MetricsConfig  `mapstructure:"metrics"`
 	Tracing  TracingConfig  `mapstructure:"tracing"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	Registry RegistryConfig `mapstructure:"registry"`
+	Runner   RunnerConfig   `mapstructure:"runner"`
 }
 
 // ServiceConfig contains general service information.
@@ -134,4 +136,58 @@ type AuthConfig struct {
 	// JWTAudience is the expected value of the "aud" (audience) claim in JWT tokens.
 	// If empty, audience validation is skipped.
 	JWTAudience string `mapstructure:"jwt_audience"`
+}
+
+// RegistryConfig contains service registry configuration.
+type RegistryConfig struct {
+	// Backend is the registry backend type: "local" or "redis".
+	// "local" uses in-memory storage (development/testing).
+	// "redis" uses Redis for distributed service discovery (production).
+	Backend string `mapstructure:"backend"`
+
+	// RedisAddr is the Redis server address (host:port) when using Redis backend.
+	RedisAddr string `mapstructure:"redis_addr"`
+
+	// RedisPassword is the Redis password (optional).
+	RedisPassword string `mapstructure:"redis_password"`
+
+	// RedisDB is the Redis database number (default: 0).
+	RedisDB int `mapstructure:"redis_db"`
+
+	// TTL is the time-to-live for service registrations in Redis.
+	// Services must send heartbeats more frequently than this to stay registered.
+	// Default: 30 seconds.
+	TTL time.Duration `mapstructure:"ttl"`
+
+	// HeartbeatInterval is how often to send heartbeat updates in Redis.
+	// Should be less than TTL to prevent expiration.
+	// Default: 10 seconds.
+	HeartbeatInterval time.Duration `mapstructure:"heartbeat_interval"`
+}
+
+// RunnerConfig contains service orchestration runner configuration.
+type RunnerConfig struct {
+	// RestartPolicy is the default restart policy for services: "never", "always", or "on-failure".
+	// Default: "on-failure".
+	RestartPolicy string `mapstructure:"restart_policy"`
+
+	// MaxRetries is the maximum number of restart attempts (0 = unlimited).
+	// Default: 5.
+	MaxRetries int `mapstructure:"max_retries"`
+
+	// InitialBackoff is the initial delay before first restart.
+	// Default: 1 second.
+	InitialBackoff time.Duration `mapstructure:"initial_backoff"`
+
+	// MaxBackoff is the maximum delay between restarts.
+	// Default: 60 seconds.
+	MaxBackoff time.Duration `mapstructure:"max_backoff"`
+
+	// BackoffMultiplier is the factor by which the backoff increases on each retry.
+	// Default: 2.0.
+	BackoffMultiplier float64 `mapstructure:"backoff_multiplier"`
+
+	// EnableJitter adds randomness to backoff (±25%) to prevent thundering herd.
+	// Default: true.
+	EnableJitter bool `mapstructure:"enable_jitter"`
 }
