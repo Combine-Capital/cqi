@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 14 - Relational database
+  postgres:
+    image: postgres:14-alpine
+    container_name: cqi-test-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cqi_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7 - In-memory cache
+  redis:
+    image: redis:7-alpine
+    container_name: cqi-test-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # NATS JetStream - Event streaming
+  nats:
+    image: nats:2.10-alpine
+    container_name: cqi-test-nats
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP management
+      - "6222:6222"  # Routing port for clustering
+    command: 
+      - "-js"                    # Enable JetStream
+      - "-sd"                    # Enable storage directory
+      - "/data"                  # Storage directory
+      - "-m"                     # Enable monitoring
+      - "8222"                   # Monitoring port
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Jaeger - Distributed tracing (optional, for full example)
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    container_name: cqi-test-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "4318:4318"  # OTLP HTTP
+      - "16686:16686" # Jaeger UI
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+
+networks:
+  default:
+    name: cqi-test-network

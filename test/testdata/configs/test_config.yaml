@@ -1,0 +1,63 @@
+# Test configuration for integration tests
+# Used by integration tests in test/integration/
+
+# Service information
+service:
+  name: cqi-test
+  version: 0.1.0
+  env: test
+
+# Server configuration
+server:
+  http_port: 8081
+  grpc_port: 9001
+  read_timeout: 30s
+  write_timeout: 30s
+
+# Logging configuration
+log:
+  level: debug
+  format: json
+  output: stdout
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  database: cqi_test
+  user: postgres
+  password: postgres
+  ssl_mode: disable
+  max_conns: 10
+  min_conns: 2
+  connect_timeout: 10s
+  query_timeout: 30s
+
+# Cache configuration
+cache:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  dial_timeout: 5s
+  pool_size: 10
+
+# Event bus configuration
+eventbus:
+  backend: memory
+  servers:
+    - nats://localhost:4222
+  stream_name: TEST_STREAM
+  consumer_name: test_consumer
+
+# Metrics configuration
+metrics:
+  enabled: true
+  port: 9091
+  path: /metrics
+
+# Tracing configuration
+tracing:
+  enabled: false
+  exporter: stdout
+  sample_rate: 1.0

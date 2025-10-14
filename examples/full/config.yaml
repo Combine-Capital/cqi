@@ -1,0 +1,87 @@
+# Full example configuration
+# Environment variables with FULL_ prefix override these values
+
+# Service information
+service:
+  name: cqi-full-example
+  version: 0.1.0
+  env: development
+
+# HTTP/gRPC server configuration
+server:
+  http_port: 8080
+  grpc_port: 9000
+  read_timeout: 30s
+  write_timeout: 30s
+  shutdown_timeout: 30s
+  max_header_bytes: 1048576
+
+# Logging configuration
+log:
+  level: info        # debug, info, warn, error
+  format: json       # json or console
+  output: stdout     # stdout, stderr, or file path
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  database: postgres
+  user: postgres
+  password: ${FULL_DATABASE_PASSWORD}  # Override via environment variable
+  ssl_mode: disable
+  max_conns: 25
+  min_conns: 5
+  max_conn_lifetime: 1h
+  max_conn_idle_time: 30m
+  connect_timeout: 10s
+  query_timeout: 30s
+
+# Cache (Redis) configuration
+cache:
+  host: localhost
+  port: 6379
+  password: ${FULL_CACHE_PASSWORD}  # Override via environment variable (empty for no auth)
+  db: 0
+  max_retries: 3
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+  pool_size: 10
+  min_idle_conns: 5
+  default_ttl: 5m
+
+# Event bus configuration
+eventbus:
+  backend: memory        # "jetstream" or "memory" (use memory for testing)
+  servers:
+    - nats://localhost:4222
+  stream_name: cqi_events
+  consumer_name: cqi_full_example
+  max_deliver: 3
+  ack_wait: 30s
+  max_ack_pending: 100
+
+# Metrics configuration
+metrics:
+  enabled: true
+  port: 9090
+  path: /metrics
+  namespace: cqi_full_example
+
+# Tracing configuration
+tracing:
+  enabled: true
+  exporter: otlp        # otlp or stdout
+  endpoint: http://localhost:4318  # OTLP HTTP endpoint
+  sample_rate: 1.0      # 1.0 = trace everything
+  insecure: true        # Use insecure connection (for development)
+
+# Authentication configuration (optional)
+auth:
+  api_keys:
+    - test-api-key-1
+    - test-api-key-2
+  jwt_public_key_path: ""
+  jwt_issuer: cqi-example
+  jwt_audience: cqi-services

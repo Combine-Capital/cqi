@@ -1,0 +1,21 @@
+# Simple example configuration
+# Environment variables with SIMPLE_ prefix override these values
+
+# Logging configuration
+log:
+  level: info        # debug, info, warn, error
+  format: json       # json or console
+  output: stdout     # stdout, stderr, or file path
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  database: postgres
+  user: postgres
+  password: ${SIMPLE_DATABASE_PASSWORD}  # Override via environment variable
+  sslmode: disable
+  max_connections: 10
+  min_connections: 2
+  connection_timeout: 10s
+  query_timeout: 30s
