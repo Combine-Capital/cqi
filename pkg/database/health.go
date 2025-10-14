@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-// HealthChecker defines the interface for database health checks.
-type HealthChecker interface {
-	// Ping verifies connectivity to the database.
-	Ping(ctx context.Context) error
-}
-
 // CheckHealth performs a health check on the database by executing a simple query.
 // It returns nil if the database is healthy, or an error if the database is unreachable
 // or the query times out.
@@ -67,4 +61,17 @@ func (p *Pool) HealthCheck(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Check implements the health.Checker interface for the database pool.
+// This allows the pool to be used directly with the health check framework.
+//
+// Example usage:
+//
+//	import "github.com/Combine-Capital/cqi/pkg/health"
+//
+//	h := health.New()
+//	h.RegisterChecker("database", dbPool)
+func (p *Pool) Check(ctx context.Context) error {
+	return p.HealthCheck(ctx)
 }

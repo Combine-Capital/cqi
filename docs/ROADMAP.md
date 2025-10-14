@@ -11,7 +11,7 @@
 - [x] **Commit 8**: Cache Package
 - [x] **Commit 9**: Event Bus Package
 - [x] **Commit 10**: Authentication Package
-- [ ] **Commit 11**: Health Check Framework
+- [x] **Commit 11**: Health Check Framework
 - [ ] **Commit 12**: Examples & Integration Tests
 - [ ] **Commit 13**: Documentation & Release Preparation
 
@@ -264,21 +264,21 @@
 **Depends**: Commit 7 (database), Commit 8 (cache), Commit 9 (bus)
 
 **Deliverables**:
-- [ ] Create `pkg/health/checker.go` with Checker interface: Check(ctx) error implemented by all infrastructure components
-- [ ] Create `pkg/health/health.go` with Health struct and RegisterChecker(name, checker) method
-- [ ] Create `pkg/health/handlers.go` with HTTP handlers: LivenessHandler() returns 200 if service running (no dependency checks), ReadinessHandler() returns 200 if all checkers pass, 503 otherwise
-- [ ] Implement database health checker in `pkg/database/health.go` executing SELECT 1 with 5 second timeout
-- [ ] Implement cache health checker in `pkg/cache/health.go` executing Redis PING with 5 second timeout
-- [ ] Implement event bus health checker in `pkg/bus/jetstream.go` verifying server connectivity with 5 second timeout
-- [ ] Create `pkg/health/health_test.go` with unit tests for health check registration and execution
+- [x] Create `pkg/health/checker.go` with Checker interface: Check(ctx) error implemented by all infrastructure components
+- [x] Create `pkg/health/health.go` with Health struct and RegisterChecker(name, checker) method
+- [x] Create `pkg/health/handlers.go` with HTTP handlers: LivenessHandler() returns 200 if service running (no dependency checks), ReadinessHandler() returns 200 if all checkers pass, 503 otherwise
+- [x] Implement database health checker in `pkg/database/health.go` executing SELECT 1 with 5 second timeout
+- [x] Implement cache health checker in `pkg/cache/health.go` executing Redis PING with 5 second timeout
+- [x] Implement event bus health checker in `pkg/bus/jetstream.go` verifying server connectivity with 5 second timeout
+- [x] Create `pkg/health/health_test.go` with unit tests for health check registration and execution
 
 **Success**:
-- /health/live endpoint returns 200 OK immediately (no dependency checks)
-- /health/ready endpoint executes all registered checkers with 5 second timeout per checker
-- /health/ready returns JSON: {"status": "healthy|unhealthy", "checks": {"database": "ok", "cache": "error: connection refused"}}
-- Failed health checks log error details but don't crash service
-- Health check results cached for 1 second to prevent checker stampede under load
-- `go test ./pkg/health/...` passes with >90% coverage
+- ✅ /health/live endpoint returns 200 OK immediately (no dependency checks)
+- ✅ /health/ready endpoint executes all registered checkers with 5 second timeout per checker
+- ✅ /health/ready returns JSON: {"status": "healthy|unhealthy", "checks": {"database": "ok", "cache": "error: connection refused"}}
+- ✅ Failed health checks log error details but don't crash service
+- ✅ Health check results cached for 1 second to prevent checker stampede under load
+- ✅ `go test ./pkg/health/...` passes with 99.0% coverage (>90%)
 
 ---
 

@@ -153,3 +153,23 @@ func (m *MemoryEventBus) Close() error {
 
 	return nil
 }
+
+// Check implements the health.Checker interface for the in-memory event bus.
+// The in-memory bus is always healthy unless it has been closed.
+//
+// Example usage:
+//
+//	import "github.com/Combine-Capital/cqi/pkg/health"
+//
+//	h := health.New()
+//	h.RegisterChecker("event_bus", memoryBus)
+func (m *MemoryEventBus) Check(ctx context.Context) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.closed {
+		return fmt.Errorf("event bus is closed")
+	}
+
+	return nil
+}

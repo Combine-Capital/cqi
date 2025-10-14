@@ -148,6 +148,19 @@ func (r *RedisCache) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
+// Check implements the health.Checker interface for the Redis cache.
+// This allows the cache to be used directly with the health check framework.
+//
+// Example usage:
+//
+//	import "github.com/Combine-Capital/cqi/pkg/health"
+//
+//	h := health.New()
+//	h.RegisterChecker("cache", redisCache)
+func (r *RedisCache) Check(ctx context.Context) error {
+	return r.CheckHealth(ctx)
+}
+
 // Close releases all resources associated with the cache.
 func (r *RedisCache) Close() error {
 	return r.client.Close()

@@ -296,6 +296,42 @@ func (j *JetStreamEventBus) Close() error {
 	return nil
 }
 
+// Check implements the health.Checker interface for the NATS JetStream event bus.
+// It verifies connectivity to the NATS server by checking the connection status.
+//
+// Example usage:
+//
+//	import "github.com/Combine-Capital/cqi/pkg/health"
+//
+//	h := health.New()
+//	h.RegisterChecker("event_bus", jetStreamBus)
+func (j *JetStreamEventBus) Check(ctx context.Context) error {
+	j.closedMu.RLock()
+	defer j.closedMu.RUnlock()
+
+	if j.closed {
+		return errors.NewTemporary("event bus is closed", nil)
+	}
+
+	if j.nc == nil {
+		return errors.NewTemporary("NATS connection is nil", nil)
+	}
+
+	// Check if connection is alive
+	status := j.nc.Status()
+	if status != nats.CONNECTED {
+		return errors.NewTemporary(fmt.Sprintf("NATS connection not connected: status=%v", status), nil)
+	}
+
+	// Try a simple RTT check to verify server responsiveness
+	_, err := j.nc.RTT()
+	if err != nil {
+		return errors.NewTemporary("NATS RTT check failed", err)
+	}
+
+	return nil
+}
+
 // RawMessage is a wrapper for raw protobuf bytes when the type is unknown.
 // Handlers should type assert to their expected message type after unmarshaling.
 type RawMessage struct {
