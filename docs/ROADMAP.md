@@ -10,7 +10,7 @@
 - [x] **Commit 7**: Database Package
 - [x] **Commit 8**: Cache Package
 - [x] **Commit 9**: Event Bus Package
-- [ ] **Commit 10**: Authentication Package
+- [x] **Commit 10**: Authentication Package
 - [ ] **Commit 11**: Health Check Framework
 - [ ] **Commit 12**: Examples & Integration Tests
 - [ ] **Commit 13**: Documentation & Release Preparation
@@ -232,26 +232,29 @@
 
 ---
 
-### Commit 10: Authentication Package
+### Commit 10: Authentication Package ✅
 
 **Goal**: Implement authentication middleware for API keys and JWT tokens
 **Depends**: Commit 2 (config, errors)
 
 **Deliverables**:
-- [ ] Add JWT dependency: `github.com/golang-jwt/jwt/v5`
-- [ ] Create `pkg/auth/auth.go` with AuthContext type containing UserID, ServiceID, AuthType (API_KEY, JWT), Claims map
-- [ ] Create `pkg/auth/context.go` with GetAuthContext(ctx) utility to extract auth from context.Context
-- [ ] Create `pkg/auth/apikey.go` with APIKeyMiddleware(validKeys []string) for HTTP and APIKeyInterceptor for gRPC checking Authorization: Bearer {key}
-- [ ] Create `pkg/auth/jwt.go` with JWTMiddleware(publicKey, issuer, audience) for HTTP and JWTInterceptor for gRPC validating JWT signatures and claims (exp, iss, aud)
-- [ ] Create `pkg/auth/auth_test.go` with unit tests for both API key and JWT validation
+- [x] Add JWT dependency: `github.com/golang-jwt/jwt/v5`
+- [x] Create `pkg/auth/auth.go` with AuthContext type containing UserID, ServiceID, AuthType (API_KEY, JWT), Claims map
+- [x] Create `pkg/auth/context.go` with GetAuthContext(ctx) utility to extract auth from context.Context
+- [x] Create `pkg/auth/apikey.go` with APIKeyMiddleware(validKeys []string) for HTTP and APIKeyInterceptor for gRPC checking Authorization: Bearer {key}
+- [x] Create `pkg/auth/jwt.go` with JWTMiddleware(publicKey, issuer, audience) for HTTP and JWTInterceptor for gRPC validating JWT signatures and claims (exp, iss, aud)
+- [x] Create `pkg/auth/auth_test.go` with unit tests for both API key and JWT validation
+- [x] Add AuthConfig to `pkg/config/config.go` with API keys, JWT public key path, issuer, and audience fields
 
 **Success**:
-- API key middleware validates Authorization header against configured list of valid keys
-- JWT middleware parses JWT token, verifies signature with public key, validates exp/iss/aud claims
-- Auth context is injected into context.Context and retrievable via GetAuthContext
-- Invalid auth returns 401 Unauthorized (HTTP) or Unauthenticated (gRPC) status
-- Both HTTP middleware and gRPC interceptor supported for each auth type
-- `go test ./pkg/auth/...` passes with >90% coverage
+- ✅ API key middleware validates Authorization header against configured list of valid keys
+- ✅ JWT middleware parses JWT token, verifies signature with public key, validates exp/iss/aud claims
+- ✅ Auth context is injected into context.Context and retrievable via GetAuthContext
+- ✅ Invalid auth returns 401 Unauthorized (HTTP) or Unauthenticated (gRPC) status
+- ✅ Both HTTP middleware and gRPC interceptor (unary and stream) supported for each auth type
+- ✅ LoadPublicKeyFromPEM helper function for loading RSA public keys from PEM format
+- ✅ Service-to-service authentication supported via "service:" prefix in JWT subject
+- ✅ `go test ./pkg/auth/...` passes with 90.8% coverage (>90%)
 
 ---
 

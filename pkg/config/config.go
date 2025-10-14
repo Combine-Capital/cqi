@@ -27,6 +27,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	Metrics  MetricsConfig  `mapstructure:"metrics"`
 	Tracing  TracingConfig  `mapstructure:"tracing"`
+	Auth     AuthConfig     `mapstructure:"auth"`
 }
 
 // ServiceConfig contains general service information.
@@ -114,4 +115,23 @@ type TracingConfig struct {
 	ExportMode   string        `mapstructure:"export_mode"`   // "grpc" or "http"
 	Insecure     bool          `mapstructure:"insecure"`      // Use insecure connection
 	BatchTimeout time.Duration `mapstructure:"batch_timeout"` // Batch export timeout
+}
+
+// AuthConfig contains authentication configuration.
+type AuthConfig struct {
+	// APIKeys is a list of valid API keys for API key authentication.
+	// Each key should be a secure random string.
+	APIKeys []string `mapstructure:"api_keys"`
+
+	// JWTPublicKeyPath is the path to the RSA public key file (PEM format)
+	// used to verify JWT signatures. If empty, JWT authentication is disabled.
+	JWTPublicKeyPath string `mapstructure:"jwt_public_key_path"`
+
+	// JWTIssuer is the expected value of the "iss" (issuer) claim in JWT tokens.
+	// If empty, issuer validation is skipped.
+	JWTIssuer string `mapstructure:"jwt_issuer"`
+
+	// JWTAudience is the expected value of the "aud" (audience) claim in JWT tokens.
+	// If empty, audience validation is skipped.
+	JWTAudience string `mapstructure:"jwt_audience"`
 }
