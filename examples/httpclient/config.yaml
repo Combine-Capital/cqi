@@ -1,0 +1,44 @@
+# HTTP Client Example Configuration
+
+# Service information
+service:
+  name: httpclient-example
+  version: 1.0.0
+  env: development
+
+# Logging configuration
+log:
+  level: info       # debug, info, warn, error
+  format: console   # json, console
+  output: stdout    # stdout, stderr, or file path
+
+# HTTP Client configuration
+http_client:
+  # Base URL for all requests (can be overridden with absolute URLs)
+  base_url: https://httpbin.org
+  
+  # Request timeout (entire request including retries)
+  timeout: 30s
+  
+  # Retry configuration
+  retry_count: 3
+  retry_wait_time: 1s
+  retry_max_wait_time: 10s
+  
+  # Rate limiting (requests per second, 0 = unlimited)
+  rate_limit_per_second: 2
+  rate_limit_burst: 5
+  
+  # Circuit breaker configuration
+  circuit_breaker_enabled: true
+  circuit_breaker_timeout: 60s
+  circuit_breaker_failure_threshold: 5
+  circuit_breaker_success_threshold: 2
+  
+  # Connection pooling
+  max_idle_conns: 100
+  max_idle_conns_per_host: 10
+  max_conns_per_host: 0  # 0 = unlimited
+  idle_conn_timeout: 90s
+  tls_handshake_timeout: 10s
+  expect_continue_timeout: 1s

@@ -41,9 +41,11 @@ import (
 	"github.com/Combine-Capital/cqi/pkg/database"
 	"github.com/Combine-Capital/cqi/pkg/errors"
 	"github.com/Combine-Capital/cqi/pkg/health"
+	"github.com/Combine-Capital/cqi/pkg/httpclient"
 	"github.com/Combine-Capital/cqi/pkg/logging"
 	"github.com/Combine-Capital/cqi/pkg/metrics"
 	"github.com/Combine-Capital/cqi/pkg/tracing"
+	"github.com/Combine-Capital/cqi/pkg/websocket"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
@@ -52,14 +54,16 @@ import (
 
 // Service encapsulates all infrastructure components
 type Service struct {
-	config  *config.Config
-	logger  *logging.Logger
-	db      *database.Pool
-	cache   *cache.RedisCache
-	bus     bus.EventBus
-	health  *health.Health
-	tracer  trace.Tracer
-	cleanup func()
+	config     *config.Config
+	logger     *logging.Logger
+	db         *database.Pool
+	cache      *cache.RedisCache
+	bus        bus.EventBus
+	health     *health.Health
+	tracer     trace.Tracer
+	httpClient *httpclient.Client
+	wsClient   *websocket.Client
+	cleanup    func()
 }
 
 func main() {
@@ -131,6 +135,30 @@ func main() {
 	}
 	defer eventBus.Close()
 
+	// Initialize HTTP client (if configured)
+	var httpClient *httpclient.Client
+	if cfg.HTTPClient.BaseURL != "" {
+		httpClient, err = httpclient.New(ctx, cfg.HTTPClient)
+		if err != nil {
+			logger.Warn().Err(err).Msg("Failed to initialize HTTP client (continuing without it)")
+		} else {
+			defer httpClient.Close()
+			logger.Info().Str("base_url", cfg.HTTPClient.BaseURL).Msg("HTTP client initialized")
+		}
+	}
+
+	// Initialize WebSocket client (if configured)
+	var wsClient *websocket.Client
+	if cfg.WebSocket.URL != "" {
+		wsClient, err = websocket.New(ctx, cfg.WebSocket)
+		if err != nil {
+			logger.Warn().Err(err).Msg("Failed to initialize WebSocket client (continuing without it)")
+		} else {
+			defer wsClient.Close()
+			logger.Info().Str("url", cfg.WebSocket.URL).Msg("WebSocket client initialized")
+		}
+	}
+
 	// Initialize health checks
 	healthChecker := health.New()
 	healthChecker.RegisterChecker("database", health.CheckerFunc(func(ctx context.Context) error {
@@ -143,13 +171,15 @@ func main() {
 
 	// Create service instance
 	svc := &Service{
-		config: cfg,
-		logger: logger,
-		db:     db,
-		cache:  redisCache,
-		bus:    eventBus,
-		health: healthChecker,
-		tracer: tracer,
+		config:     cfg,
+		logger:     logger,
+		db:         db,
+		cache:      redisCache,
+		bus:        eventBus,
+		health:     healthChecker,
+		tracer:     tracer,
+		httpClient: httpClient,
+		wsClient:   wsClient,
 	}
 
 	// Initialize database schema
@@ -386,6 +416,108 @@ func (s *Service) demonstrateUsage(ctx context.Context) error {
 	// Give subscriber time to process
 	time.Sleep(100 * time.Millisecond)
 
+	// 5. HTTP Client: Make external API calls (if configured)
+	if s.httpClient != nil {
+		s.logger.Info().Msg("Demo 5: HTTP client operations")
+		if err := s.demonstrateHTTPClient(ctx); err != nil {
+			s.logger.Warn().Err(err).Msg("HTTP client demo skipped")
+		}
+	}
+
+	// 6. WebSocket Client: Real-time communication (if configured)
+	if s.wsClient != nil {
+		s.logger.Info().Msg("Demo 6: WebSocket client operations")
+		if err := s.demonstrateWebSocketClient(ctx); err != nil {
+			s.logger.Warn().Err(err).Msg("WebSocket client demo skipped")
+		}
+	}
+
 	s.logger.Info().Msg("Infrastructure demonstration completed")
+	return nil
+}
+
+// demonstrateHTTPClient shows HTTP client usage for external API calls
+func (s *Service) demonstrateHTTPClient(ctx context.Context) error {
+	// Example: GET request to external API
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	resp, err := s.httpClient.Get(ctx, "/get").
+		WithQuery("demo", "true").
+		Do()
+	if err != nil {
+		return errors.Wrap(err, "HTTP GET failed")
+	}
+
+	s.logger.Info().
+		Int("status_code", resp.StatusCode()).
+		Int("body_size", len(resp.Body())).
+		Msg("HTTP GET request successful")
+
+	// Example: POST request with JSON body
+	data := map[string]interface{}{
+		"service":   "cqi-full-example",
+		"action":    "demo",
+		"timestamp": time.Now().Unix(),
+	}
+
+	postCtx, postCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer postCancel()
+
+	postResp, err := s.httpClient.Post(postCtx, "/post").
+		WithJSON(data).
+		Do()
+	if err != nil {
+		return errors.Wrap(err, "HTTP POST failed")
+	}
+
+	s.logger.Info().
+		Int("status_code", postResp.StatusCode()).
+		Msg("HTTP POST request successful")
+
+	return nil
+}
+
+// demonstrateWebSocketClient shows WebSocket client usage for real-time communication
+func (s *Service) demonstrateWebSocketClient(ctx context.Context) error {
+	// Register message handler
+	s.wsClient.RegisterHandler("echo", func(ctx context.Context, msg *websocket.Message) error {
+		s.logger.Info().
+			Str("type", msg.Type).
+			Str("payload", string(msg.Payload)).
+			Msg("Received WebSocket message")
+		return nil
+	})
+
+	// Connect to WebSocket server
+	if err := s.wsClient.Connect(ctx); err != nil {
+		return errors.Wrap(err, "WebSocket connect failed")
+	}
+
+	if !s.wsClient.IsConnected() {
+		return errors.NewTemporary("WebSocket not connected", nil)
+	}
+
+	s.logger.Info().Msg("WebSocket connected successfully")
+
+	// Send a test message
+	message := map[string]interface{}{
+		"type":      "echo",
+		"message":   "Hello from CQI full example",
+		"timestamp": time.Now().Unix(),
+	}
+
+	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := s.wsClient.Send(sendCtx, message); err != nil {
+		return errors.Wrap(err, "WebSocket send failed")
+	}
+
+	s.logger.Info().Msg("WebSocket message sent successfully")
+
+	// Wait a bit for response
+	time.Sleep(1 * time.Second)
+
 	return nil
 }

@@ -13,6 +13,8 @@ This example demonstrates comprehensive usage of all CQI infrastructure packages
 - **Event Bus**: NATS JetStream (or in-memory) for pub/sub messaging
 - **Health Checks**: Liveness and readiness endpoints
 - **HTTP Server**: Production-ready HTTP server with middleware chain
+- **HTTP Client**: REST API calls with retry, rate limiting, and circuit breaker (optional)
+- **WebSocket Client**: Real-time communication with auto-reconnect (optional)
 
 ## Prerequisites
 
@@ -121,6 +123,39 @@ When the service starts, it automatically demonstrates:
 2. **Database Transaction**: Inserts multiple records in a transaction
 3. **Cache Operations**: Sets and gets a protobuf message
 4. **Event Publishing**: Publishes an event that the subscriber receives
+5. **HTTP Client** (if configured): Makes GET and POST requests to external API
+6. **WebSocket Client** (if configured): Connects, sends messages, and receives responses
+
+### Enabling HTTP Client Demo
+
+To enable HTTP client demonstrations, configure the base URL in `config.yaml`:
+
+```yaml
+http_client:
+  base_url: https://httpbin.org  # or your API endpoint
+```
+
+The demo will make GET and POST requests to demonstrate:
+- Request/response handling
+- Query parameters
+- JSON serialization
+- Error handling
+
+### Enabling WebSocket Client Demo
+
+To enable WebSocket client demonstrations, configure the URL in `config.yaml`:
+
+```yaml
+websocket:
+  url: wss://ws.postman-echo.com/raw  # or your WebSocket endpoint
+```
+
+The demo will:
+- Connect to the WebSocket server
+- Register message handlers
+- Send test messages
+- Receive and log responses
+- Demonstrate auto-reconnect capabilities
 
 ## Graceful Shutdown
 

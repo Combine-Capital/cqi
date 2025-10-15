@@ -1,0 +1,40 @@
+# WebSocket Client Example Configuration
+
+# Service information
+service:
+  name: websocket-example
+  version: 1.0.0
+  env: development
+
+# Logging configuration
+log:
+  level: info       # debug, info, warn, error
+  format: console   # json, console
+  output: stdout    # stdout, stderr, or file path
+
+# WebSocket configuration
+websocket:
+  # WebSocket server URL (ws:// or wss://)
+  url: wss://ws.postman-echo.com/raw
+  
+  # Reconnection configuration
+  reconnect_max_attempts: 5      # 0 = unlimited
+  reconnect_initial_delay: 1s
+  reconnect_max_delay: 32s
+  
+  # Ping/pong heartbeat
+  ping_interval: 30s
+  pong_wait: 60s
+  write_wait: 10s
+  
+  # Buffer sizes
+  message_buffer_size: 256
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  
+  # Connection pooling (1 = no pooling)
+  pool_size: 1
+  
+  # Custom headers for WebSocket handshake
+  headers:
+    User-Agent: CQI-WebSocket-Client/1.0

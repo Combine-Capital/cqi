@@ -85,3 +85,28 @@ auth:
   jwt_public_key_path: ""
   jwt_issuer: cqi-example
   jwt_audience: cqi-services
+
+# HTTP Client configuration (optional - comment out if not needed)
+http_client:
+  base_url: https://httpbin.org  # Example API endpoint
+  timeout: 30s
+  retry_count: 3
+  retry_wait_time: 1s
+  retry_max_wait_time: 10s
+  rate_limit_per_second: 0  # 0 = unlimited
+  rate_limit_burst: 1
+  circuit_breaker_enabled: false
+  max_idle_conns: 100
+  max_idle_conns_per_host: 10
+
+# WebSocket configuration (optional - comment out if not needed)
+websocket:
+  url: ""  # wss://ws.postman-echo.com/raw (example, leave empty to disable)
+  reconnect_max_attempts: 5
+  reconnect_initial_delay: 1s
+  reconnect_max_delay: 32s
+  ping_interval: 30s
+  pong_wait: 60s
+  write_wait: 10s
+  message_buffer_size: 256
+  pool_size: 1
