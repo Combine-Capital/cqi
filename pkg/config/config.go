@@ -31,6 +31,7 @@ type Config struct {
 	Registry   RegistryConfig   `mapstructure:"registry"`
 	Runner     RunnerConfig     `mapstructure:"runner"`
 	HTTPClient HTTPClientConfig `mapstructure:"http_client"`
+	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
 }
 
 // ServiceConfig contains general service information.
@@ -262,4 +263,53 @@ type HTTPClientConfig struct {
 	// ExpectContinueTimeout is the time to wait for a 100-continue response.
 	// Default: 1 second.
 	ExpectContinueTimeout time.Duration `mapstructure:"expect_continue_timeout"`
+}
+
+// WebSocketConfig contains WebSocket client configuration.
+type WebSocketConfig struct {
+	// URL is the WebSocket server URL (ws:// or wss://).
+	URL string `mapstructure:"url"`
+
+	// ReconnectMaxAttempts is the maximum number of reconnect attempts (0 = unlimited).
+	// Default: 5.
+	ReconnectMaxAttempts int `mapstructure:"reconnect_max_attempts"`
+
+	// ReconnectInitialDelay is the initial delay before first reconnect attempt.
+	// Default: 1 second.
+	ReconnectInitialDelay time.Duration `mapstructure:"reconnect_initial_delay"`
+
+	// ReconnectMaxDelay is the maximum delay between reconnect attempts.
+	// Default: 32 seconds.
+	ReconnectMaxDelay time.Duration `mapstructure:"reconnect_max_delay"`
+
+	// PingInterval is the interval between ping messages.
+	// Default: 30 seconds.
+	PingInterval time.Duration `mapstructure:"ping_interval"`
+
+	// PongWait is the maximum time to wait for pong response.
+	// Default: 60 seconds.
+	PongWait time.Duration `mapstructure:"pong_wait"`
+
+	// WriteWait is the maximum time to wait for write operations.
+	// Default: 10 seconds.
+	WriteWait time.Duration `mapstructure:"write_wait"`
+
+	// MessageBufferSize is the size of the message buffer.
+	// Default: 256.
+	MessageBufferSize int `mapstructure:"message_buffer_size"`
+
+	// ReadBufferSize is the size of the read buffer in bytes.
+	// Default: 1024.
+	ReadBufferSize int `mapstructure:"read_buffer_size"`
+
+	// WriteBufferSize is the size of the write buffer in bytes.
+	// Default: 1024.
+	WriteBufferSize int `mapstructure:"write_buffer_size"`
+
+	// PoolSize is the number of connections in the pool.
+	// Default: 1 (no pooling).
+	PoolSize int `mapstructure:"pool_size"`
+
+	// Headers are custom HTTP headers to send with the WebSocket handshake.
+	Headers map[string]string `mapstructure:"headers"`
 }
