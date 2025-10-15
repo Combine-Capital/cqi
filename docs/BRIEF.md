@@ -84,6 +84,15 @@ Shared infrastructure library providing event bus, database, cache, logging, met
 - [MVP] Automatic restart on failure with exponential backoff and max retry limits
 - [MVP] Aggregate health checks across all managed services
 
+### HTTP & WebSocket Client Infrastructure
+- [Post MVP] Provide HTTP client with retry, circuit breaker, connection pooling, and middleware (logging, metrics, tracing, auth)
+- [Post MVP] Provide request builder with common patterns for REST APIs (headers, query params, JSON/protobuf bodies)
+- [Post MVP] Provide response handling with automatic error mapping and deserialization
+- [Post MVP] Provide client-side rate limiting (token bucket) to prevent overwhelming downstream services
+- [Post MVP] Provide WebSocket client with auto-reconnect, connection pooling, and message handler framework
+- [Post MVP] Provide WebSocket middleware for logging, metrics, and retry on connection failures
+- [Post MVP] Use mature libraries: resty/retryablehttp for HTTP, gorilla/websocket or nhooyr/websocket for WebSocket
+
 ### Post-MVP Features
 - [Post MVP] Contribute infrastructure protobufs to CQC for platform standardization
 - [Post MVP] Circuit breaker with configurable thresholds, timeout, half-open testing

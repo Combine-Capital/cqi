@@ -80,6 +80,8 @@
 - etcd3 registry backend for production service discovery
 - Distributed locks (Redis/database)
 - Graceful degradation for optional dependencies
+- HTTP/REST client infrastructure with retry, circuit breaker, connection pooling, rate limiting
+- WebSocket client infrastructure with auto-reconnect, connection pooling, message handlers
 
 ## Technology Stack
 
@@ -1074,6 +1076,60 @@ disco := discovery.NewConsul(discovery.ConsulConfig{
 })
 
 endpoints, err := disco.Resolve(ctx, "cqmd")
+```
+
+**HTTP Client (Post-MVP):**
+```go
+import "github.com/Combine-Capital/cqi/pkg/httpclient"
+
+// Create HTTP client with retry, circuit breaker, rate limiting
+client := httpclient.New(httpclient.Config{
+    BaseURL: "https://api.example.com",
+    Timeout: 30 * time.Second,
+    RetryConfig: retry.Config{
+        MaxAttempts: 3,
+        InitialDelay: time.Second,
+    },
+    RateLimitConfig: ratelimit.Config{
+        RequestsPerSecond: 100,
+    },
+}, httpclient.WithLogging(logger), httpclient.WithMetrics(), httpclient.WithTracing())
+
+// Make request with automatic retry, metrics, tracing
+var response MyResponse
+err := client.Get(ctx, "/api/data").
+    QueryParam("filter", "active").
+    Header("X-API-Key", apiKey).
+    Do(&response)
+```
+
+**WebSocket Client (Post-MVP):**
+```go
+import "github.com/Combine-Capital/cqi/pkg/websocket"
+
+// Create WebSocket client with auto-reconnect, connection pooling
+client := websocket.New(websocket.Config{
+    URL: "wss://stream.example.com/feed",
+    ReconnectConfig: websocket.ReconnectConfig{
+        MaxAttempts: 5,
+        InitialDelay: time.Second,
+    },
+}, websocket.WithLogging(logger), websocket.WithMetrics())
+
+// Register message handlers
+client.Handle("price_update", func(ctx context.Context, msg []byte) error {
+    var update PriceUpdate
+    if err := json.Unmarshal(msg, &update); err != nil {
+        return err
+    }
+    return s.handlePriceUpdate(ctx, &update)
+})
+
+// Connect with automatic reconnect on failure
+if err := client.Connect(ctx); err != nil {
+    return err
+}
+defer client.Close()
 ```
 
 ## Testing Strategy

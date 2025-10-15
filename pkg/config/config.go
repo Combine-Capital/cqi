@@ -19,17 +19,18 @@ import (
 
 // Config represents the complete configuration for a CQI-based service.
 type Config struct {
-	Service  ServiceConfig  `mapstructure:"service"`
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Cache    CacheConfig    `mapstructure:"cache"`
-	EventBus EventBusConfig `mapstructure:"eventbus"`
-	Log      LogConfig      `mapstructure:"log"`
-	Metrics  MetricsConfig  `mapstructure:"metrics"`
-	Tracing  TracingConfig  `mapstructure:"tracing"`
-	Auth     AuthConfig     `mapstructure:"auth"`
-	Registry RegistryConfig `mapstructure:"registry"`
-	Runner   RunnerConfig   `mapstructure:"runner"`
+	Service    ServiceConfig    `mapstructure:"service"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Cache      CacheConfig      `mapstructure:"cache"`
+	EventBus   EventBusConfig   `mapstructure:"eventbus"`
+	Log        LogConfig        `mapstructure:"log"`
+	Metrics    MetricsConfig    `mapstructure:"metrics"`
+	Tracing    TracingConfig    `mapstructure:"tracing"`
+	Auth       AuthConfig       `mapstructure:"auth"`
+	Registry   RegistryConfig   `mapstructure:"registry"`
+	Runner     RunnerConfig     `mapstructure:"runner"`
+	HTTPClient HTTPClientConfig `mapstructure:"http_client"`
 }
 
 // ServiceConfig contains general service information.
@@ -190,4 +191,75 @@ type RunnerConfig struct {
 	// EnableJitter adds randomness to backoff (±25%) to prevent thundering herd.
 	// Default: true.
 	EnableJitter bool `mapstructure:"enable_jitter"`
+}
+
+// HTTPClientConfig contains HTTP/REST client configuration.
+type HTTPClientConfig struct {
+	// BaseURL is the base URL for all requests (e.g., "https://api.example.com").
+	// Individual requests can override this with absolute URLs.
+	BaseURL string `mapstructure:"base_url"`
+
+	// Timeout is the maximum duration for the entire request including retries.
+	// Default: 30 seconds.
+	Timeout time.Duration `mapstructure:"timeout"`
+
+	// RetryCount is the maximum number of retry attempts.
+	// Default: 3.
+	RetryCount int `mapstructure:"retry_count"`
+
+	// RetryWaitTime is the initial wait time between retries.
+	// Default: 1 second.
+	RetryWaitTime time.Duration `mapstructure:"retry_wait_time"`
+
+	// RetryMaxWaitTime is the maximum wait time between retries.
+	// Default: 10 seconds.
+	RetryMaxWaitTime time.Duration `mapstructure:"retry_max_wait_time"`
+
+	// RateLimitPerSecond is the maximum requests per second (0 = unlimited).
+	// Default: 0 (disabled).
+	RateLimitPerSecond float64 `mapstructure:"rate_limit_per_second"`
+
+	// RateLimitBurst is the maximum burst size for rate limiting.
+	// Default: 1.
+	RateLimitBurst int `mapstructure:"rate_limit_burst"`
+
+	// CircuitBreakerEnabled enables circuit breaker pattern.
+	// Default: false.
+	CircuitBreakerEnabled bool `mapstructure:"circuit_breaker_enabled"`
+
+	// CircuitBreakerTimeout is the timeout before moving to half-open state.
+	// Default: 60 seconds.
+	CircuitBreakerTimeout time.Duration `mapstructure:"circuit_breaker_timeout"`
+
+	// CircuitBreakerFailureThreshold is the number of failures before opening circuit.
+	// Default: 5.
+	CircuitBreakerFailureThreshold int `mapstructure:"circuit_breaker_failure_threshold"`
+
+	// CircuitBreakerSuccessThreshold is the number of successes to close circuit.
+	// Default: 2.
+	CircuitBreakerSuccessThreshold int `mapstructure:"circuit_breaker_success_threshold"`
+
+	// MaxIdleConns is the maximum number of idle connections across all hosts.
+	// Default: 100.
+	MaxIdleConns int `mapstructure:"max_idle_conns"`
+
+	// MaxIdleConnsPerHost is the maximum idle connections per host.
+	// Default: 10.
+	MaxIdleConnsPerHost int `mapstructure:"max_idle_conns_per_host"`
+
+	// MaxConnsPerHost is the maximum total connections per host (0 = unlimited).
+	// Default: 0.
+	MaxConnsPerHost int `mapstructure:"max_conns_per_host"`
+
+	// IdleConnTimeout is the maximum time an idle connection stays open.
+	// Default: 90 seconds.
+	IdleConnTimeout time.Duration `mapstructure:"idle_conn_timeout"`
+
+	// TLSHandshakeTimeout is the maximum time for TLS handshake.
+	// Default: 10 seconds.
+	TLSHandshakeTimeout time.Duration `mapstructure:"tls_handshake_timeout"`
+
+	// ExpectContinueTimeout is the time to wait for a 100-continue response.
+	// Default: 1 second.
+	ExpectContinueTimeout time.Duration `mapstructure:"expect_continue_timeout"`
 }

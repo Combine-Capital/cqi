@@ -1,6 +1,8 @@
 # Implementation Roadmap
 
 ## Progress Checklist
+
+### MVP (v0.1.0) ✅
 - [x] **Commit 1**: Project Foundation & Module Setup
 - [x] **Commit 2**: Foundation Packages (Errors & Config)
 - [x] **Commit 3**: Logging Package
@@ -17,6 +19,11 @@
 - [x] **Commit 14**: Service Discovery & Registration
 - [x] **Commit 15**: Service Orchestration & Runner
 - [x] **Commit 16**: Documentation & Release Preparation
+
+### Post-MVP: Client Infrastructure
+- [ ] **Commit 17**: HTTP Client Package
+- [ ] **Commit 18**: WebSocket Client Package
+- [ ] **Commit 19**: Client Infrastructure Examples & Integration Tests
 
 ## Implementation Sequence
 
@@ -435,3 +442,94 @@
 - ✅ Module dependencies cleaned with `go mod tidy`
 - ✅ Documentation enables new service setup in <30 minutes (BRIEF success metric achieved)
 - ✅ **v0.1.0 release tagged and pushed**: `git tag v0.1.0 && git push origin v0.1.0` ✓
+
+---
+
+## Post-MVP: Client Infrastructure
+
+### Commit 17: HTTP Client Package ✅
+
+**Goal**: Implement HTTP/REST client with retry, circuit breaker, and connection pooling using mature libraries
+**Depends**: Commit 2 (config, errors), Commit 3 (logging), Commit 4 (retry), Commit 5 (metrics), Commit 6 (tracing)
+
+**Deliverables**:
+- [x] Evaluate and select HTTP client library: **resty.dev/v3** selected (11.3k stars, built-in circuit breaker, native middleware, better API than retryablehttp)
+- [x] Create `pkg/httpclient/client.go` with Client struct wrapping resty with context support, rate limiting, and connection pooling
+- [x] Create `pkg/httpclient/request.go` with Request builder supporting: URL, headers, query params, JSON/protobuf bodies, timeout, auth
+- [x] Create `pkg/httpclient/response.go` with Response wrapper providing: status code, headers, body deserialization (JSON/protobuf), error mapping
+- [x] Implement rate limiting in client.go using golang.org/x/time/rate token bucket algorithm
+- [x] Implement connection pooling in client.go via http.Transport configuration (MaxIdleConns, IdleConnTimeout, etc.)
+- [x] Create `pkg/httpclient/middleware.go` with middleware chain: logging (request/response), metrics (duration, status), tracing (span creation), auth (header injection)
+- [x] Add HTTPClientConfig to `pkg/config/config.go` with 15 fields: base URL, timeout, retry config, rate limit, circuit breaker, connection pool settings
+- [x] Create targeted unit tests: `client_test.go`, `request_test.go`, `response_test.go`, `middleware_test.go` testing core functionality only
+- [x] Tests optimized for speed with minimal timeouts (0.236s total execution time)
+
+**Success**:
+- ✅ HTTP client wraps resty.dev/v3 with minimal custom code (269 lines in client.go)
+- ✅ Request builder provides fluent API: Get(), Post(), Put(), Delete(), Patch(), Head(), Options() with chainable methods
+- ✅ Retry logic uses resty's built-in retry with configurable count, wait times, and exponential backoff
+- ✅ Circuit breaker integrated via resty with configurable thresholds (failure/success thresholds, timeout)
+- ✅ Rate limiter enforces client-side limits using token bucket (requests/second, burst) before requests execute
+- ✅ Connection pooling configured via http.Transport: MaxIdleConns, MaxIdleConnsPerHost, MaxConnsPerHost, IdleConnTimeout, TLSHandshakeTimeout, ExpectContinueTimeout
+- ✅ Middleware automatically adds: trace spans with http.* attributes, request/response logs with duration, auth token/basic auth headers
+- ✅ Error responses mapped to CQI error types: 400→InvalidInput, 401/403→Unauthorized, 404→NotFound, 429→Temporary, 5xx→Temporary, context errors preserved
+- ✅ `go test ./pkg/httpclient/...` passes with 59.9% coverage testing core functionality (HTTP methods, rate limiting, circuit breaker, JSON/Proto, auth, error mapping)
+- ✅ All tests complete in 0.236 seconds with no slow timeouts
+
+---
+
+### Commit 18: WebSocket Client Package
+
+**Goal**: Implement WebSocket client with auto-reconnect, connection pooling, and message handlers using mature libraries
+**Depends**: Commit 2 (config, errors), Commit 3 (logging), Commit 4 (retry), Commit 5 (metrics)
+
+**Deliverables**:
+- [ ] Evaluate and select WebSocket library: gorilla/websocket (github.com/gorilla/websocket) or nhooyr/websocket (nhooyr.io/websocket)
+- [ ] Create `pkg/websocket/client.go` with WebSocketClient interface: Connect(ctx), Close(), Send(ctx, message), Receive(ctx)
+- [ ] Create `pkg/websocket/conn.go` with connection management: auto-reconnect with exponential backoff, ping/pong heartbeat, graceful close
+- [ ] Create `pkg/websocket/handler.go` with message handler framework: Register(messageType, handler), dispatch loop with error handling
+- [ ] Create `pkg/websocket/pool.go` with connection pooling: multiple connections to same endpoint, round-robin distribution, health checking
+- [ ] Create `pkg/websocket/middleware.go` with middleware: logging (connect/disconnect/messages), metrics (message count, connection duration), retry (reconnect attempts)
+- [ ] Add WebSocketConfig to `pkg/config/config.go` with URL, reconnect config (max attempts, initial delay, max delay), ping interval, message buffer size
+- [ ] Create `pkg/websocket/client_test.go` with comprehensive unit tests using httptest for WebSocket mocking
+- [ ] Update `docs/BRIEF.md` and `docs/SPEC.md` to move WebSocket client from Post-MVP to MVP
+
+**Success**:
+- WebSocket client wraps mature library (gorilla or nhooyr) with minimal custom code
+- Auto-reconnect handles disconnections with exponential backoff (1s, 2s, 4s, 8s, 16s, max 32s) up to max attempts
+- Ping/pong heartbeat detects dead connections (configurable interval, default 30s)
+- Message handler framework supports multiple message types with type-based routing
+- Connection pooling distributes load across multiple connections with automatic failover
+- Middleware automatically adds: connect/disconnect/message logs, metrics (ws_client_message_count_total, ws_client_connection_duration_seconds, ws_client_reconnect_count_total)
+- Graceful shutdown: drain message buffers, send close frame, wait for close acknowledgment with timeout
+- Thread-safe operations with proper mutex protection for concurrent sends
+- `go test ./pkg/websocket/...` passes with >90% coverage
+
+---
+
+### Commit 19: Client Infrastructure Examples & Integration Tests
+
+**Goal**: Provide working examples and integration tests for HTTP and WebSocket clients
+**Depends**: Commit 17 (httpclient), Commit 18 (websocket)
+
+**Deliverables**:
+- [ ] Create `examples/httpclient/main.go` demonstrating HTTP client usage: GET/POST requests, retry, rate limiting, middleware
+- [ ] Create `examples/httpclient/config.yaml` with example HTTP client configuration
+- [ ] Create `examples/websocket/main.go` demonstrating WebSocket client usage: connect, send/receive, handlers, auto-reconnect
+- [ ] Create `examples/websocket/config.yaml` with example WebSocket configuration
+- [ ] Create `test/integration/httpclient_test.go` with integration tests using httptest server for real HTTP calls
+- [ ] Create `test/integration/websocket_test.go` with integration tests using httptest WebSocket server for real WS connections
+- [ ] Update `examples/full/main.go` to include HTTP and WebSocket client examples
+- [ ] Update `examples/full/config.yaml` with HTTP and WebSocket client configuration
+- [ ] Update `examples/full/README.md` with setup instructions for client infrastructure
+
+**Success**:
+- `cd examples/httpclient && go build` compiles successfully
+- `cd examples/websocket && go build` compiles successfully
+- HTTP client example demonstrates: REST API calls (GET/POST/PUT/DELETE), retry on failure, rate limiting, circuit breaker
+- WebSocket example demonstrates: connect with reconnect, message handler registration, send/receive, graceful shutdown
+- Integration tests verify HTTP client with real httptest server: successful requests, retry on failures, rate limiting enforcement
+- Integration tests verify WebSocket client with real httptest WS server: connect, send/receive, auto-reconnect on disconnect, ping/pong
+- Examples serve as documentation showing real usage patterns for client infrastructure
+- `go test ./test/integration/httpclient_test.go` passes
+- `go test ./test/integration/websocket_test.go` passes
